@@ -1,0 +1,128 @@
+CREATE DATABASE gupta;
+USE gupta;
+
+-- Customers Table
+CREATE TABLE Customers (
+    customer_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15) UNIQUE NOT NULL,
+    address TEXT NOT NULL,
+    dob DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO Customers (name, email, phone, address, dob) VALUES
+('John Doe', 'john.doe@email.com', '1234567890', '123 Main St', '1985-07-20'),
+('Jane Smith', 'jane.smith@email.com', '0987654321', '456 Oak St', '1992-05-14');
+
+SELECT * FROM Customers;
+
+-- Accounts Table
+CREATE TABLE Accounts (
+    account_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    account_type ENUM('Savings', 'Current') NOT NULL,
+    balance DECIMAL(15,2) DEFAULT 0.00,
+    status ENUM('Active', 'Suspended', 'Closed') NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) ON DELETE CASCADE
+);
+INSERT INTO Accounts (customer_id, account_type, balance, status) VALUES
+(1, 'Savings', 5000.00, 'Active'),
+(2, 'Current', 12000.00, 'Active');
+
+SELECT * FROM Accounts;
+
+-- Transactions Table
+CREATE TABLE Transactions (
+    transaction_id INT PRIMARY KEY AUTO_INCREMENT,
+    account_id INT NOT NULL,
+    transaction_type ENUM('Deposit', 'Withdrawal', 'Transfer') NOT NULL,
+    amount DECIMAL(15,2) CHECK (amount > 0),
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    receiver_account_id INT NULL,
+    FOREIGN KEY (account_id) REFERENCES Accounts(account_id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_account_id) REFERENCES Accounts(account_id) ON DELETE SET NULL
+);
+INSERT INTO Transactions (account_id, transaction_type, amount, receiver_account_id) VALUES
+(1, 'Deposit', 1000.00, NULL),
+(2, 'Withdrawal', 500.00, NULL),
+(1, 'Transfer', 2000.00, 2);
+
+select * from Transactions;
+
+-- Loans Table
+CREATE TABLE Loans (
+    loan_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    loan_type ENUM('Personal', 'Home', 'Car') NOT NULL,
+    amount DECIMAL(15,2) CHECK (amount > 0),
+    interest_rate DECIMAL(5,2) CHECK (interest_rate > 0),
+    status ENUM('Approved', 'Pending', 'Rejected') NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) ON DELETE CASCADE
+);
+INSERT INTO Loans (customer_id, loan_type, amount, interest_rate, status) VALUES
+(1, 'Home', 100000.00, 5.5, 'Approved'),
+(2, 'Car', 25000.00, 6.2, 'Pending');
+
+select * from Loans;
+
+-- Employees Table
+CREATE TABLE Employees (
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    role ENUM('Manager', 'Clerk', 'Support') NOT NULL
+);
+INSERT INTO Employees (name, email, role) VALUES
+('Alice Brown', 'alice.b@email.com', 'Manager'),
+('Bob White', 'bob.w@email.com', 'Support');
+
+-- Customer Support Table
+CREATE TABLE CustomerSupport (
+    ticket_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    issue_type ENUM('Technical', 'Fraud', 'Inquiry') NOT NULL,
+    status ENUM('Open', 'In Progress', 'Resolved') NOT NULL,
+    assigned_employee INT NULL,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_employee) REFERENCES Employees(employee_id) ON DELETE SET NULL
+);
+INSERT INTO CustomerSupport (customer_id, issue_type, status, assigned_employee) VALUES
+(1, 'Technical', 'Open', 2),
+(2, 'Fraud', 'Resolved', 1);
+
+SELECT * FROM Transactions WHERE amount > 500;
+SELECT * FROM Loans WHERE status = 'Pending';
+
+-- Insertion Query
+INSERT INTO Customers (name, email, phone, address, dob) 
+VALUES ('Emma Watson', 'emma.w@email.com', '9876543210', '789 Pine St', '1995-09-12');
+
+-- Updation Query
+UPDATE Accounts SET balance = balance + 500 WHERE account_id = 1;
+UPDATE Loans SET status = 'Approved' WHERE loan_id = 2;
+
+-- Deletion Query
+DELETE FROM Customers WHERE customer_id = 2;
+DELETE FROM Transactions WHERE transaction_id = 3;
+
+-- Joins Queries
+SELECT Customers.name, Customers.email, Accounts.account_type, Accounts.balance 
+FROM Customers 
+JOIN Accounts ON Customers.customer_id = Accounts.customer_id;
+
+SELECT Transactions.transaction_id, Customers.name, Transactions.transaction_type, Transactions.amount 
+FROM Transactions
+JOIN Accounts ON Transactions.account_id = Accounts.account_id
+JOIN Customers ON Accounts.customer_id = Customers.customer_id;
+
+SELECT Customers.name, Loans.loan_type, Loans.amount, Loans.status 
+FROM Loans
+JOIN Customers ON Loans.customer_id = Customers.customer_id;
+
+-- Aggregation Queries
+SELECT SUM(balance) AS total_balance FROM Accounts;
+SELECT AVG(amount) AS avg_loan_amount FROM Loans;
+SELECT account_id, COUNT(transaction_id) AS total_transactions 
+FROM Transactions 
+GROUP BY account_id;
